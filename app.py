@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import jwt
-import datetime
 import requests
 import os
  
@@ -9,8 +8,8 @@ app.config['SECRET_KEY'] = 'mysecretkey'
  
 # mock user
 USER = {
-    "username": "student",
-    "password": "1234"
+    "username": "mina",
+    "password": "888888"
 }
  
 # mock database
