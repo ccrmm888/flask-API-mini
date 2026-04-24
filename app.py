@@ -127,7 +127,7 @@ def external_tasks():
         return jsonify({"error": {"code": error[1], "message": error[0]}}), error[1]
  
     friend_apis = {
-        "Tangmo": "https://mini-task-api-v2.onrender.com/public-tasks",
+        "Bonus": "ahttps://mini-task-api-v2.onrender.com/public-tasks",
         "Cream": "https://flask-api-mini-1.onrender.com/public-tasks"
     }
  
@@ -158,6 +158,14 @@ def external_tasks():
     }
 })
  
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify({
+        "error": {
+            "code": 500,
+            "message": "Internal server error"
+        }
+    }), 500
  
 # -----------------------------
 # 🚀 RUN (Deploy)
