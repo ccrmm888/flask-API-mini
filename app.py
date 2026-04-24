@@ -82,19 +82,7 @@ def create_task():
 # ------------------------
 @app.route('/public-tasks', methods=['GET'])
 def public_tasks():
-    # ส่งเฉพาะข้อมูลที่ปลอดภัย (โชว์ว่าเราคิดเรื่อง security)
-    public_data = [
-        {
-            "id": t["id"],
-            "task": t["task"]
-        }
-        for t in tasks
-    ]
-
-    return jsonify({
-        "status": "success",
-        "data": public_data
-    })
+    return jsonify({"tasks": tasks})
 
 
 # ------------------------
@@ -145,7 +133,7 @@ def external_tasks():
 def external_public():
     try:
         # 🔥 ใช้ public endpoint ของเพื่อน
-        url = "https://jsonplaceholder.typicode.com/todos"
+        url = "https://mini-task-api-v2.onrender.com"
 
         response = requests.get(url, timeout=5)
         external_data = response.json()[:5]
