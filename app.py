@@ -4,20 +4,18 @@ import requests
 import os
  
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'mysecretkey'
+app.config['SECRET_KEY'] = 'mysterykey888'
  
-# mock user
+#user
 USER = {
     "username": "mina",
     "password": "888888"
 }
  
-# mock database
+#database
 tasks = [ { "message": "Task created", "data": { "id": 1, "task": "Drink water", "status": "pending" } }, { "message": "Task created", "data": { "id": 2, "task": "ทำรายงานวิชา API", "status": "pending" } }, { "message": "Task created", "data": { "id": 3, "task": "เตรียมสไลด์พรีเซนต์โปรเจค", "status": "pending" } }, { "message": "Task created", "data": { "id": 4, "task": "ทดสอบ API ด้วย Postman", "status": "pending" } } ]
  
-# -----------------------------
-# 🔐 LOGIN
-# -----------------------------
+#log in
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
@@ -45,9 +43,7 @@ def login():
     }), 401
  
  
-# -----------------------------
-# 🔐 TOKEN CHECK
-# -----------------------------
+#token verification
 def verify_token(req):
     auth = req.headers.get("Authorization")
  
@@ -62,9 +58,7 @@ def verify_token(req):
         return None, ("Invalid token", 401)
  
  
-# -----------------------------
-# 📋 GET TASKS (PRIVATE)
-# -----------------------------
+#get tasks
 @app.route('/tasks', methods=['GET'])
 def get_tasks():
     user, error = verify_token(request)
@@ -74,9 +68,7 @@ def get_tasks():
     return jsonify({"tasks": tasks})
  
  
-# -----------------------------
-# ➕ CREATE TASK
-# -----------------------------
+#create task
 @app.route('/tasks', methods=['POST'])
 def create_task():
     user, error = verify_token(request)
@@ -107,9 +99,7 @@ def create_task():
     return jsonify(new_task)
  
  
-# -----------------------------
-# 🌐 PUBLIC TASKS (สำคัญมาก!)
-# -----------------------------
+#public tasks
 @app.route('/public-tasks', methods=['GET'])
 def public_tasks():
     return jsonify({
@@ -117,9 +107,7 @@ def public_tasks():
     })
  
  
-# -----------------------------
-# 🔗 EXTERNAL API
-# -----------------------------
+#external tasks
 @app.route('/external-tasks', methods=['GET'])
 def external_tasks():
     user, error = verify_token(request)
@@ -127,7 +115,7 @@ def external_tasks():
         return jsonify({"error": {"code": error[1], "message": error[0]}}), error[1]
  
     friend_apis = {
-        "Bonus": "ahttps://mini-task-api-v2.onrender.com/public-tasks",
+        "Bonus": "https://task-api1-mdz5.onrender.com",
         "Cream": "https://flask-api-mini-1.onrender.com/public-tasks"
     }
  
@@ -167,9 +155,7 @@ def internal_error(e):
         }
     }), 500
  
-# -----------------------------
-# 🚀 RUN (Deploy)
-# -----------------------------
+#run run run away
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
