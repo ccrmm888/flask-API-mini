@@ -10,7 +10,7 @@ jwt = JWTManager(app)
 # ------------------------
 # STORAGE (ชั่วคราว)
 # ------------------------
-tasks = []
+tasks = [{"id": 1, "title": "Drink water", "status": "่pending"}]
 
 # ------------------------
 # LOGIN
