@@ -79,22 +79,29 @@ def get_tasks():
     extracted = [t["data"] for t in tasks]
 
     return jsonify({
-        "status": "success",
-        "data": tasks
+    "status": "success",
+    "data": extracted
     })
 
 
-# ------------------------
-# ➕ CREATE TASK
+# # ------------------------
+# ➕ CREATE TASK (FIXED)
 # ------------------------
 @app.route('/tasks', methods=['POST'])
 @jwt_required()
 def create_task():
     data = request.get_json()
-
+ 
     if not data or not data.get("task"):
         return jsonify({"error": "Task is required"}), 400
-
+ 
+    # 🔥 กันซ้ำ
+    if any(t["data"]["task"] == data["task"] for t in tasks):
+        return jsonify({
+            "status": "error",
+            "message": "Task already exists"
+        }), 400
+ 
     task = {
         "message": "Task created",
         "data": {
@@ -103,10 +110,14 @@ def create_task():
             "status": "pending"
         }
     }
-
+ 
+    # ✅ แก้ตรงนี้ (สำคัญสุด)
     tasks.append(task)
-
-    return jsonify(tasks)
+ 
+    return jsonify({
+        "status": "success",
+        "data": task["data"]
+    })
 
 
 # ------------------------
