@@ -84,28 +84,29 @@ def create_task():
     user, error = verify_token(request)
     if error:
         return jsonify({"error": {"code": error[1], "message": error[0]}}), error[1]
- 
+
     data = request.json
- 
-    if not data or not data.get("title"):
+
+    if not data or not data.get("task"):
         return jsonify({
             "error": {
                 "code": 400,
-                "message": "Title is required"
+                "message": "Task is required"
             }
         }), 400
- 
+
     new_task = {
-        "id": len(tasks) + 1,
-        "title": data["title"],
-        "status": data.get("status", "pending"),
-        "priority": data.get("priority", "medium"),
-        "due_date": data.get("due_date", None)
+        "message": "Task created",
+        "data": {
+            "id": len(tasks) + 1,
+            "task": data["task"],
+            "status": data.get("status", "pending")
+        }
     }
- 
+
     tasks.append(new_task)
- 
-    return jsonify({"message": "Task created"})
+
+    return jsonify(new_task)
  
  
 # -----------------------------
