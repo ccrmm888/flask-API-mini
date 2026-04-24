@@ -7,6 +7,10 @@ app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'super-secret-key'
 jwt = JWTManager(app)
 
+USER = {
+    "username": "student",
+    "password": "1234"
+}
 # ------------------------
 # STORAGE (ชั่วคราว)
 # ------------------------
@@ -49,180 +53,148 @@ tasks = [
   }
 ]
 
-# ------------------------
-# LOGIN
-# ------------------------
+# -----------------------------
+# 🔐 LOGIN
+# -----------------------------
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
-
-    if not data:
-        return jsonify({"error": "Missing JSON body"}), 400
-
-    username = data.get("username")
-    password = data.get("password")
-
-    if not username or not password:
-        return jsonify({"error": "Username and password required"}), 400
-
-    if username == "admin" and password == "1234":
-        token = create_access_token(identity=username)
+    data = request.json
+ 
+    if not data or not data.get("username") or not data.get("password"):
         return jsonify({
-            "status": "success",
-            "access_token": token
-        })
-
-    return jsonify({"error": "Invalid credentials"}), 401
-
-
-# ------------------------
-# PRIVATE TASKS (ต้องมี token)
-# ------------------------
-@app.route('/tasks', methods=['GET'])
-@jwt_required()
-def get_tasks():
-    extracted = [t["data"] for t in tasks]
-
+            "error": {
+                "code": 400,
+                "message": "Missing username or password"
+            }
+        }), 400
+ 
+    if data["username"] == USER["username"] and data["password"] == USER["password"]:
+        token = jwt.encode({
+            "user": data["username"],
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        }, app.config['SECRET_KEY'], algorithm="HS256")
+ 
+        return jsonify({"token": token})
+ 
     return jsonify({
-        "status": "success",
-        "data": extracted
-    })
-
-
-@app.route('/tasks', methods=['POST'])
-@jwt_required()
-def create_task():
-    data = request.get_json()
-
-    if not data:
-        return jsonify({"error": "Missing JSON body"}), 400
-
-    task_text = data.get("task")
-
-    if not task_text:
-        return jsonify({"error": "Task is required"}), 400
-
-    new_task = {
-        "status": "success",
-        "message": "Task created",
-        "data": {
-            "id": len(tasks) + 1,
-            "task": task_text,
-            "status": "pending"
+        "error": {
+            "code": 401,
+            "message": "Invalid credentials"
         }
+    }), 401
+ 
+ 
+# -----------------------------
+# 🔐 TOKEN CHECK
+# -----------------------------
+def verify_token(req):
+    auth = req.headers.get("Authorization")
+ 
+    if not auth:
+        return None, ("Missing token", 401)
+ 
+    try:
+        token = auth.split(" ")[1]
+        data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
+        return data, None
+    except:
+        return None, ("Invalid token", 401)
+ 
+ 
+# -----------------------------
+# 📋 GET TASKS (PRIVATE)
+# -----------------------------
+@app.route('/tasks', methods=['GET'])
+def get_tasks():
+    user, error = verify_token(request)
+    if error:
+        return jsonify({"error": {"code": error[1], "message": error[0]}}), error[1]
+ 
+    return jsonify({"tasks": tasks})
+ 
+ 
+# -----------------------------
+# ➕ CREATE TASK
+# -----------------------------
+@app.route('/tasks', methods=['POST'])
+def create_task():
+    user, error = verify_token(request)
+    if error:
+        return jsonify({"error": {"code": error[1], "message": error[0]}}), error[1]
+ 
+    data = request.json
+ 
+    if not data or not data.get("title"):
+        return jsonify({
+            "error": {
+                "code": 400,
+                "message": "Title is required"
+            }
+        }), 400
+ 
+    new_task = {
+        "id": len(tasks) + 1,
+        "title": data["title"],
+        "status": data.get("status", "pending"),
+        "priority": data.get("priority", "medium"),
+        "due_date": data.get("due_date", None)
     }
-
+ 
     tasks.append(new_task)
-
-    return jsonify(new_task)
-
-
-# ------------------------
-# PUBLIC TASKS (ให้เพื่อนเรียกได้)
-# ------------------------
+ 
+    return jsonify({"message": "Task created"})
+ 
+ 
+# -----------------------------
+# 🌐 PUBLIC TASKS (สำคัญมาก!)
+# -----------------------------
 @app.route('/public-tasks', methods=['GET'])
 def public_tasks():
-    public_data = [
-        {
-            "id": t["data"].get("id"),
-            "task": t["data"].get("task"),
-            "status": t["data"].get("status", "unknown")
-        }
-        for t in tasks
-    ]
-
-    return jsonify({
-        "status": "success",
-        "data": public_data
-    })
-
-
-# ------------------------
-# EXTERNAL API (Integration ของจริง)
-# ------------------------
+    return jsonify({"tasks": tasks})
+ 
+ 
+# -----------------------------
+# 🔗 EXTERNAL API
+# -----------------------------
 @app.route('/external-tasks', methods=['GET'])
-@jwt_required()
 def external_tasks():
-    try:
-        # 🔥 ใส่ URL ของเพื่อนตรงนี้
-        friend_url = "https://jsonplaceholder.typicode.com/todos"
-        # friend_url = "https://เพื่อน.onrender.com/public-tasks"
-
-        response = requests.get(friend_url, timeout=5)
-
-        if response.status_code != 200:
-            return jsonify({
-                "status": "error",
-                "message": "Friend API failed"
-            }), 500
-
-        friend_json = response.json()
-
-        # รองรับหลายรูปแบบ
-        if isinstance(friend_json, list):
-            friend_tasks = friend_json[:5]
-        else:
-            friend_tasks = friend_json.get("data", [])
-
-        # 🔥 MERGE
-        combined = {
-            "my_tasks": [t["data"] for t in tasks],
-            "friend_tasks": friend_tasks
-        }
-
-        return jsonify({
-            "status": "success",
-            "data": combined
-        })
-
-    except requests.exceptions.Timeout:
-        return jsonify({
-            "status": "error",
-            "message": "Friend API timeout"
-        }), 500
-
-    except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
-
-
-# ------------------------
-# PUBLIC EXTERNAL (ไม่ต้อง token)
-# ------------------------
-@app.route('/external-public', methods=['GET'])
-def external_public():
-    try:
-        friend_url = "https://jsonplaceholder.typicode.com/todos"
-
-        response = requests.get(friend_url, timeout=5)
-
-        return jsonify({
-            "status": "success",
-            "data": response.json()[:5]
-        })
-
-    except:
-        return jsonify({"error": "External API failed"}), 500
-
-
-# ------------------------
-# ERROR HANDLER
-# ------------------------
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({"error": "Endpoint not found"}), 404
-
-
-@app.errorhandler(500)
-def server_error(e):
-    return jsonify({"error": "Internal server error"}), 500
-
-
-# ------------------------
-# RUN (Render)
-# ------------------------
+    user, error = verify_token(request)
+    if error:
+        return jsonify({"error": {"code": error[1], "message": error[0]}}), error[1]
+ 
+    friend_apis = {
+        "Tangmo": "https://mini-task-api-v2.onrender.com/public-tasks",
+        "Cream": "https://flask-api-mini-1.onrender.com/public-tasks"
+    }
+ 
+    external_all = {}
+ 
+    for name, url in friend_apis.items():
+        try:
+            res = requests.get(url, timeout=10)
+            if res.status_code == 200:
+                data = res.json()
+                if "tasks" in data:
+                    external_all[name] = data["tasks"]
+                elif "data" in data:
+                    external_all[name] = data["data"]
+                else:
+                    external_all[name] = data
+ 
+            else:
+                external_all[name] = {"error": f"{url} returned {res.status_code}"}
+        except:
+            external_all[name] = {"error": f"Cannot connect to {url}"}
+ 
+    return jsonify({
+        "my_tasks": tasks,
+        "external_tasks": external_all
+    })
+ 
+ 
+# -----------------------------
+# 🚀 RUN (Deploy)
+# -----------------------------
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
+    port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
