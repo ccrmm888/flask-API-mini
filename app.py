@@ -112,7 +112,9 @@ def create_task():
 # -----------------------------
 @app.route('/public-tasks', methods=['GET'])
 def public_tasks():
-    return jsonify({"tasks": tasks})
+    return jsonify({
+        "tasks": [t["data"] for t in tasks]
+    })
  
  
 # -----------------------------
@@ -149,9 +151,12 @@ def external_tasks():
             external_all[name] = {"error": f"Cannot connect to {url}"}
  
     return jsonify({
-        "my_tasks": tasks,
+    "status": "success",
+    "data": {
+        "my_tasks": [t["data"] for t in tasks],
         "external_tasks": external_all
-    })
+    }
+})
  
  
 # -----------------------------
