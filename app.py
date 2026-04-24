@@ -78,45 +78,67 @@ def create_task():
 
 
 # ------------------------
-# PUBLIC TASKS (เพื่อนเรียกได้ ไม่ต้อง token)
+# PUBLIC TASKS (ให้เพื่อนเรียกได้)
 # ------------------------
 @app.route('/public-tasks', methods=['GET'])
 def public_tasks():
-    return jsonify({"tasks": tasks})
+    public_data = [
+        {
+            "id": t["id"],
+            "task": t["task"]
+        }
+        for t in tasks
+    ]
+
+    return jsonify({
+        "status": "success",
+        "data": public_data
+    })
 
 
 # ------------------------
-# EXTERNAL API (ดึงของเพื่อนแบบไม่ใช้ token)
+# EXTERNAL API (Integration ของจริง)
 # ------------------------
 @app.route('/external-tasks', methods=['GET'])
 @jwt_required()
 def external_tasks():
     try:
-        # 🔥 เปลี่ยน URL นี้เป็นของเพื่อน
-        url = "https://jsonplaceholder.typicode.com/todos"
+        # 🔥 ใส่ URL ของเพื่อนตรงนี้
+        friend_url = "https://jsonplaceholder.typicode.com/todos"
+        # 👉 เปลี่ยนเป็น:
+        # friend_url = "https://เพื่อน.onrender.com/public-tasks"
 
-        response = requests.get(url, timeout=5)
+        response = requests.get(friend_url, timeout=5)
 
         if response.status_code != 200:
             return jsonify({
                 "status": "error",
-                "message": "Failed to fetch external API"
+                "message": "Friend API failed"
             }), 500
 
-        external_data = response.json()[:5]
+        friend_json = response.json()
+
+        # 🔥 รองรับทั้ง 2 แบบ (เพื่อน / placeholder)
+        if isinstance(friend_json, list):
+            friend_tasks = friend_json[:5]
+        else:
+            friend_tasks = friend_json.get("data", [])
+
+        # 🔥 MERGE DATA (หัวใจของงาน)
+        combined = {
+            "my_tasks": tasks,
+            "friend_tasks": friend_tasks
+        }
 
         return jsonify({
             "status": "success",
-            "data": {
-                "my_tasks": tasks,
-                "external_tasks": external_data
-            }
+            "data": combined
         })
 
     except requests.exceptions.Timeout:
         return jsonify({
             "status": "error",
-            "message": "External API timeout"
+            "message": "Friend API timeout"
         }), 500
 
     except Exception as e:
@@ -127,20 +149,17 @@ def external_tasks():
 
 
 # ------------------------
-# OPTIONAL: PUBLIC EXTERNAL (ไม่ต้อง token)
+# OPTIONAL: PUBLIC MERGE (ไม่ต้อง token)
 # ------------------------
 @app.route('/external-public', methods=['GET'])
 def external_public():
     try:
-        # 🔥 ใช้ public endpoint ของเพื่อน
-        url = "https://mini-task-api-v2.onrender.com"
-
-        response = requests.get(url, timeout=5)
-        external_data = response.json()[:5]
+        friend_url = "https://jsonplaceholder.typicode.com/todos"
+        response = requests.get(friend_url, timeout=5)
 
         return jsonify({
             "status": "success",
-            "data": external_data
+            "data": response.json()[:5]
         })
 
     except:
@@ -161,7 +180,7 @@ def server_error(e):
 
 
 # ------------------------
-# RUN
+# RUN (สำหรับ Render)
 # ------------------------
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
