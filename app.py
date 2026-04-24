@@ -13,11 +13,10 @@ USER = {
 }
 
 # ------------------------
-# STORAGE (ห้ามแก้ตามโจทย์)
+# STORAGE
 # ------------------------
 tasks = [
   {
-    "status": "success",
     "message": "Task created",
     "data": {
       "id": 1,
@@ -26,7 +25,6 @@ tasks = [
     }
   },
   {
-    "status": "success",
     "message": "Task created",
     "data": {
       "id": 2,
@@ -35,7 +33,6 @@ tasks = [
     }
   },
   {
-    "status": "success",
     "message": "Task created",
     "data": {
       "id": 3,
@@ -44,7 +41,6 @@ tasks = [
     }
   },
   {
-    "status": "success",
     "message": "Task created",
     "data": {
       "id": 4,
@@ -100,7 +96,6 @@ def create_task():
         return jsonify({"error": "Task is required"}), 400
 
     new_task = {
-        "status": "success",
         "message": "Task created",
         "data": {
             "id": len(tasks) + 1,
@@ -136,7 +131,7 @@ def external_tasks():
 
     friend_apis = {
         "Tangmo": "https://mini-task-api-v2.onrender.com/public-tasks",
-        "Cream": "https://flask-api-mini-1.onrender.com/public-tasks"
+        "ฺBonus": "https://task-api1-mdz5.onrender.com/public-tasks",
     }
 
     external_all = {}
