@@ -115,8 +115,8 @@ def external_tasks():
         return jsonify({"error": {"code": error[1], "message": error[0]}}), error[1]
  
     friend_apis = {
-        "Bonus": "https://task-api1-mdz5.onrender.com",
-        "Cream": "https://flask-api-mini-1.onrender.com/public-tasks"
+        "Bonus": "https://task-api1-mdz5.onrender.com/public-tasks",
+        "Tangmo": "https://mini-task-api-v2.onrender.com/public-tasks",
     }
  
     external_all = {}
@@ -141,7 +141,7 @@ def external_tasks():
     return jsonify({
     "status": "success",
     "data": {
-        "my_tasks": [t["data"] for t in tasks],
+        "Cream": [t["data"] for t in tasks],
         "external_tasks": external_all
     }
 })
