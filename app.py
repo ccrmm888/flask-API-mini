@@ -10,7 +10,9 @@ jwt = JWTManager(app)
 # ------------------------
 # STORAGE (ชั่วคราว)
 # ------------------------
-tasks = [{"id": 1, "title": "Drink water", "status": "่pending"}]
+tasks = [
+    {"id": 1, "task": "Drink water", "status": "pending"}
+]
 
 # ------------------------
 # LOGIN
@@ -65,7 +67,8 @@ def create_task():
 
     task = {
         "id": len(tasks) + 1,
-        "task": task_text
+        "task": task_text,
+        "status": "pending"
     }
 
     tasks.append(task)
@@ -84,8 +87,9 @@ def create_task():
 def public_tasks():
     public_data = [
         {
-            "id": t["id"],
-            "task": t["task"]
+            "id": t.get("id"),
+            "task": t.get("task"),
+            "status": t.get("status", "unknown")
         }
         for t in tasks
     ]
@@ -105,7 +109,6 @@ def external_tasks():
     try:
         # 🔥 ใส่ URL ของเพื่อนตรงนี้
         friend_url = "https://jsonplaceholder.typicode.com/todos"
-        # 👉 เปลี่ยนเป็น:
         # friend_url = "https://เพื่อน.onrender.com/public-tasks"
 
         response = requests.get(friend_url, timeout=5)
@@ -118,13 +121,13 @@ def external_tasks():
 
         friend_json = response.json()
 
-        # 🔥 รองรับทั้ง 2 แบบ (เพื่อน / placeholder)
+        # รองรับหลายรูปแบบ
         if isinstance(friend_json, list):
             friend_tasks = friend_json[:5]
         else:
             friend_tasks = friend_json.get("data", [])
 
-        # 🔥 MERGE DATA (หัวใจของงาน)
+        # 🔥 MERGE
         combined = {
             "my_tasks": tasks,
             "friend_tasks": friend_tasks
@@ -149,12 +152,13 @@ def external_tasks():
 
 
 # ------------------------
-# OPTIONAL: PUBLIC MERGE (ไม่ต้อง token)
+# PUBLIC EXTERNAL (ไม่ต้อง token)
 # ------------------------
 @app.route('/external-public', methods=['GET'])
 def external_public():
     try:
         friend_url = "https://jsonplaceholder.typicode.com/todos"
+
         response = requests.get(friend_url, timeout=5)
 
         return jsonify({
@@ -180,7 +184,7 @@ def server_error(e):
 
 
 # ------------------------
-# RUN (สำหรับ Render)
+# RUN (Render)
 # ------------------------
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
