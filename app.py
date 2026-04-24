@@ -106,7 +106,7 @@ def create_task():
 
     tasks.append(task)
 
-    return jsonify(task)
+    return jsonify(tasks)
 
 
 # ------------------------
