@@ -11,7 +11,42 @@ jwt = JWTManager(app)
 # STORAGE (ชั่วคราว)
 # ------------------------
 tasks = [
-    {"id": 1, "task": "Drink water", "status": "pending"}
+  {
+    "status": "success",
+    "message": "Task created",
+    "data": {
+      "id": 1,
+      "task": "Drink water",
+      "status": "pending"
+    }
+  },
+  {
+    "status": "success",
+    "message": "Task created",
+    "data": {
+      "id": 2,
+      "task": "ทำรายงานวิชา API",
+      "status": "pending"
+    }
+  },
+  {
+    "status": "success",
+    "message": "Task created",
+    "data": {
+      "id": 3,
+      "task": "เตรียมสไลด์พรีเซนต์โปรเจค",
+      "status": "pending"
+    }
+  },
+  {
+    "status": "success",
+    "message": "Task created",
+    "data": {
+      "id": 4,
+      "task": "ทดสอบ API ด้วย Postman",
+      "status": "pending"
+    }
+  }
 ]
 
 # ------------------------
@@ -46,9 +81,11 @@ def login():
 @app.route('/tasks', methods=['GET'])
 @jwt_required()
 def get_tasks():
+    extracted = [t["data"] for t in tasks]
+
     return jsonify({
         "status": "success",
-        "data": tasks
+        "data": extracted
     })
 
 
@@ -65,19 +102,19 @@ def create_task():
     if not task_text:
         return jsonify({"error": "Task is required"}), 400
 
-    task = {
-        "id": len(tasks) + 1,
-        "task": task_text,
-        "status": "pending"
-    }
-
-    tasks.append(task)
-
-    return jsonify({
+    new_task = {
         "status": "success",
         "message": "Task created",
-        "data": task
-    })
+        "data": {
+            "id": len(tasks) + 1,
+            "task": task_text,
+            "status": "pending"
+        }
+    }
+
+    tasks.append(new_task)
+
+    return jsonify(new_task)
 
 
 # ------------------------
@@ -87,9 +124,9 @@ def create_task():
 def public_tasks():
     public_data = [
         {
-            "id": t.get("id"),
-            "task": t.get("task"),
-            "status": t.get("status", "unknown")
+            "id": t["data"].get("id"),
+            "task": t["data"].get("task"),
+            "status": t["data"].get("status", "unknown")
         }
         for t in tasks
     ]
@@ -129,7 +166,7 @@ def external_tasks():
 
         # 🔥 MERGE
         combined = {
-            "my_tasks": tasks,
+            "my_tasks": [t["data"] for t in tasks],
             "friend_tasks": friend_tasks
         }
 
