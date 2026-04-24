@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 import requests
+import os
 
 app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'super-secret-key'
@@ -38,7 +39,7 @@ def login():
 
 
 # ------------------------
-# GET TASKS
+# PRIVATE TASKS (ต้องมี token)
 # ------------------------
 @app.route('/tasks', methods=['GET'])
 @jwt_required()
@@ -49,9 +50,6 @@ def get_tasks():
     })
 
 
-# ------------------------
-# CREATE TASK
-# ------------------------
 @app.route('/tasks', methods=['POST'])
 @jwt_required()
 def create_task():
@@ -78,23 +76,39 @@ def create_task():
         "data": task
     })
 
-@app.route('/public-tasks', methods=['GET'])
-def public_tasks():
-    return jsonify({"tasks": tasks})
 
 # ------------------------
-# EXTERNAL API (INTEGRATION)
+# PUBLIC TASKS (เพื่อนเรียกได้ ไม่ต้อง token)
+# ------------------------
+@app.route('/public-tasks', methods=['GET'])
+def public_tasks():
+    # ส่งเฉพาะข้อมูลที่ปลอดภัย (โชว์ว่าเราคิดเรื่อง security)
+    public_data = [
+        {
+            "id": t["id"],
+            "task": t["task"]
+        }
+        for t in tasks
+    ]
+
+    return jsonify({
+        "status": "success",
+        "data": public_data
+    })
+
+
+# ------------------------
+# EXTERNAL API (ดึงของเพื่อนแบบไม่ใช้ token)
 # ------------------------
 @app.route('/external-tasks', methods=['GET'])
 @jwt_required()
 def external_tasks():
     try:
-        # 🔹 เปลี่ยนตรงนี้เป็น API เพื่อนจริงได้
+        # 🔥 เปลี่ยน URL นี้เป็นของเพื่อน
         url = "https://jsonplaceholder.typicode.com/todos"
 
         response = requests.get(url, timeout=5)
 
-        # เช็ค status
         if response.status_code != 200:
             return jsonify({
                 "status": "error",
@@ -125,7 +139,28 @@ def external_tasks():
 
 
 # ------------------------
-# ERROR HANDLER (เสริมให้ดูโปร)
+# OPTIONAL: PUBLIC EXTERNAL (ไม่ต้อง token)
+# ------------------------
+@app.route('/external-public', methods=['GET'])
+def external_public():
+    try:
+        # 🔥 ใช้ public endpoint ของเพื่อน
+        url = "https://jsonplaceholder.typicode.com/todos"
+
+        response = requests.get(url, timeout=5)
+        external_data = response.json()[:5]
+
+        return jsonify({
+            "status": "success",
+            "data": external_data
+        })
+
+    except:
+        return jsonify({"error": "External API failed"}), 500
+
+
+# ------------------------
+# ERROR HANDLER
 # ------------------------
 @app.errorhandler(404)
 def not_found(e):
@@ -140,8 +175,6 @@ def server_error(e):
 # ------------------------
 # RUN
 # ------------------------
-import os
-
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
