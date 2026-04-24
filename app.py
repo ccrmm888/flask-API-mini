@@ -95,7 +95,7 @@ def create_task():
     if not data or not data.get("task"):
         return jsonify({"error": "Task is required"}), 400
 
-    new_task = {
+    task = {
         "message": "Task created",
         "data": {
             "id": len(tasks) + 1,
@@ -104,9 +104,9 @@ def create_task():
         }
     }
 
-    tasks.append(new_task)
+    tasks.append(task)
 
-    return jsonify(new_task)
+    return jsonify(task)
 
 
 # ------------------------
