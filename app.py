@@ -80,7 +80,7 @@ def get_tasks():
 
     return jsonify({
         "status": "success",
-        "data": extracted
+        "data": tasks
     })
 
 
