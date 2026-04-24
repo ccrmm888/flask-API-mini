@@ -78,6 +78,9 @@ def create_task():
         "data": task
     })
 
+@app.route('/public-tasks', methods=['GET'])
+def public_tasks():
+    return jsonify({"tasks": tasks})
 
 # ------------------------
 # EXTERNAL API (INTEGRATION)
